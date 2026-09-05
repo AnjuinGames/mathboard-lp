@@ -729,6 +729,12 @@
     var sel = document.getElementById('langSel'); if(sel) sel.value = lang;
   }
   (function(){
+    // Capture the Japanese defaults authored in the HTML so switching back to 日本語 works.
+    var ja = I18N.ja;
+    document.querySelectorAll('[data-i18n]').forEach(function(el){ var k=el.getAttribute('data-i18n'); if(ja[k]==null) ja[k]=el.textContent; });
+    document.querySelectorAll('[data-i18n-html]').forEach(function(el){ var k=el.getAttribute('data-i18n-html'); if(ja[k]==null) ja[k]=el.innerHTML; });
+    document.querySelectorAll('[data-i18n-alt]').forEach(function(el){ var k=el.getAttribute('data-i18n-alt'); if(ja[k]==null) ja[k]=el.getAttribute('alt'); });
+
     var supported = ['ja','en','zh','ko','vi'];
     var saved; try{ saved = localStorage.getItem('mb_lang'); }catch(e){}
     var nav = (navigator.language || 'ja').slice(0,2).toLowerCase();
