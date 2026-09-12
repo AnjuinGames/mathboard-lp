@@ -780,6 +780,29 @@
     });
   })();
 
+  // how-to 動画をシーク可能にする（Cloudflare Pages が Range を返さず 200 全量で応答するため、
+  // 標準の <video> ではスキップ/巻き戻しができない）。ファイルを一度取得して Blob URL 化すると
+  // 全バイトを保持するため完全にシーク可能になる。取得失敗時は元の src のまま（フォールバック）。
+  (function(){
+    var v = document.querySelector('video.how-to');
+    if(!v) return;
+    var src = v.getAttribute('src');
+    if(!src || v.dataset.seekablePatched) return;
+    function loadSeekable(){
+      v.dataset.seekablePatched = '1';
+      fetch(src, {cache:'force-cache'}).then(function(r){ return r.ok ? r.blob() : Promise.reject(new Error('http '+r.status)); }).then(function(b){
+        var wasPlaying = !v.paused && !v.ended;
+        var t = v.currentTime || 0;
+        var url = URL.createObjectURL(b);
+        v.addEventListener('loadedmetadata', function(){ try{ if(t>0.1) v.currentTime = t; }catch(e){} if(wasPlaying){ v.play().catch(function(){}); } }, {once:true});
+        v.setAttribute('src', url);
+        v.load();
+      }).catch(function(){ /* 取得失敗時は元のままにする */ });
+    }
+    if('requestIdleCallback' in window){ requestIdleCallback(loadSeekable, {timeout:3000}); }
+    else { setTimeout(loadSeekable, 1200); }
+  })();
+
   (function(){
     var els = document.querySelectorAll('.reveal');
     if(!('IntersectionObserver' in window) || window.matchMedia('(prefers-reduced-motion: reduce)').matches){
